@@ -1,0 +1,338 @@
+#include <climits>
+#include <iostream>
+#include <sstream>
+using namespace std;
+int MAX = 2;
+
+struct Node {
+
+  bool leaf;
+  int size;
+  int *key=new int[MAX];
+
+  Node **ptr = new Node *[MAX + 1];
+};
+
+class BPTree {
+    Node *root;
+
+    void insertInternal(int x, Node *cursor, Node *child)
+   {
+        if(cursor->size<MAX)
+        {
+            int i=0;
+            int j=0;
+            while(i<cursor->size && x>cursor->key[i])
+            i=i+1;
+            j=cursor->size;
+            while(j>i) 
+            {
+            cursor->key[j]=cursor->key[j - 1];
+                --j;
+            }
+            j=1+cursor->size;
+            //cout<<j;
+            while(j>i+1) {
+            cursor->ptr[j]=cursor->ptr[j-1];
+            --j;
+            }
+
+            cursor->key[i]=x;
+            ++ cursor->size;
+            cursor->ptr[i+1] = child;
+        } 
+        else {
+            Node *newInternal = new Node;
+            int virtualKey[1+MAX];
+            Node *virtualPtr[2+MAX];
+            int i=0;
+            while(i<MAX)
+            {
+            virtualKey[i] = cursor->key[i];
+            //cout<<virtualKey[i];
+                ++i;
+            }
+            //cout<<i;
+            i=0;
+            while(i<=MAX){
+            virtualPtr[i] = cursor->ptr[i];
+            ++i;
+            }
+            
+            i = 0;
+            int j=0;
+            while(i<MAX && x>virtualKey[i])
+            ++i;
+            j=MAX+1;
+            while(j>i) {
+            virtualKey[j]=virtualKey[j-1];
+            --j;
+            }
+
+            virtualKey[i] = x;
+            for(j=MAX+2;j>i+1; j--)
+            {
+            virtualPtr[j] = virtualPtr[j - 1];
+            }
+
+            virtualPtr[1+ i] = child;
+            //cout<<i;
+            newInternal->leaf = false;
+            cursor->size =(MAX+ 1)/2;
+            newInternal->size =MAX- (MAX + 1)/2;
+            i=0;
+            j=cursor->size+1;
+            for(;i<newInternal->size;++i,++j) 
+                newInternal->key[i] = virtualKey[j];
+            i=0;
+            j=cursor->size+1;
+            for(;i<newInternal->size+ 1; i++, j++) {
+            newInternal->ptr[i] = virtualPtr[j];
+            }
+            if (cursor != root)  
+            {
+            insertInternal(cursor->key[cursor->size], findParent(root, cursor), newInternal);
+            }
+            else
+                
+            {
+            Node *newRoot = new Node;
+            newRoot->key[0] = cursor->key[cursor->size];
+            newRoot->ptr[0] = cursor;
+            newRoot->ptr[1] = newInternal;
+            newRoot->leaf = false;
+            newRoot->size = 1;
+            root = newRoot;
+            }
+        }
+    }
+  
+    Node * findParent(Node *cursor, Node *child) 
+    {
+        Node *parent;
+        if (cursor->leaf || (cursor->ptr[0])->leaf) {
+            return NULL;
+        }
+        for (int i = 0; i < cursor->size + 1; i++) {
+            if (cursor->ptr[i] == child) {
+            parent = cursor;
+            return parent;
+            } else {
+            parent = findParent(cursor->ptr[i], child);
+            if (parent != NULL)
+                return parent;
+            }
+        }
+        return parent;
+    }
+
+
+   public:
+  
+  BPTree()
+  {
+      root = NULL;
+  }
+  
+  void search(int x)
+    {
+        if (root!=NULL)
+        {
+                Node *temp = root;
+                while (!temp->leaf)
+                {
+                    int i=0;
+                    int s= temp->size;
+                    while(i<s)
+                    {                      
+                        if (i==s-1) 
+                        {
+                            temp = temp->ptr[i + 1];
+                            break;
+                        }
+                        if (x<temp->key[i])
+                        {
+                            temp = temp->ptr[i];
+                            break;
+                        }
+                        ++i;
+                        //cout<<i;
+                    }
+                }
+                int s= temp->size;
+                int i=0;
+                while(i<s)
+                {
+                    if(temp->key[i]==x)
+                        {
+                            cout << "Found\n";
+                            return;
+                        }
+                    ++i;
+                }
+                cout << "Not found\n";
+        }       
+        else 
+            cout << "Empty Tree\n";
+    }
+
+  void insert(int x)
+    {
+        if(root!=NULL)
+        {
+        Node *temp = root;
+        Node *parent;
+        while (!temp->leaf)
+        {
+            parent=temp;
+            int s=temp->size;
+            int i=0;
+            while(i<s)
+            {
+                if(x<temp->key[i])
+                {
+                    temp = temp->ptr[i];
+                    break;
+                }
+                if (i==s-1)
+                {
+                    temp = temp->ptr[i + 1];
+                    break;
+                }
+            ++i;
+            }
+        }
+        int s=temp->size;
+        if (s< MAX) 
+        {
+        int i = 0;
+
+        while ((i<s) && (x>temp->key[i]))
+            i=i+1;
+
+        int j=s;
+        while(j > i)
+        {
+            temp->key[j]=temp->key[j-1];
+            --j;
+        }
+        //cout<<i;
+        //cout<<j;
+        //cout<<temp->size;
+        temp->key[i] = x;
+        temp->size ++;
+        ++s;
+        //cout<<temp->size;
+        temp->ptr[s]=temp->ptr[s-1];
+        temp->ptr[s-1]=NULL;
+        } 
+        else {
+        Node *newLeaf = new Node;
+        int virtualNode[1+MAX];
+        int i=0;
+        while(i<MAX)
+        {
+            virtualNode[i] = temp->key[i];
+            ++i;
+        }
+        i = 0;
+        while (i<MAX && x>virtualNode[i])
+            i++;
+            int j=MAX+1;
+        while (j>i)
+        {
+            virtualNode[j] = virtualNode[j - 1];
+            --j;
+        }
+        
+        virtualNode[i] = x;
+        newLeaf->leaf = true;
+        temp->size = (MAX + 1) / 2;
+        int s=temp->size;
+        newLeaf->size = MAX + 1 - (MAX + 1) / 2;
+        temp->ptr[s] = newLeaf;
+        newLeaf->ptr[newLeaf->size] = temp->ptr[MAX];
+        temp->ptr[MAX] = NULL;
+        i=0;
+        while(i<s) 
+        {
+            temp->key[i] = virtualNode[i];
+            ++i;
+        }
+        i=0;
+        for(j=s;i<newLeaf->size;++i,++j) 
+        {
+            newLeaf->key[i] = virtualNode[j];
+        }
+
+        if(root==temp)
+        {
+            Node *newRoot = new Node;
+            newRoot->key[0] = newLeaf->key[0];
+            newRoot->ptr[0] = temp;
+            newRoot->ptr[1] = newLeaf;
+            newRoot->leaf = false;
+            newRoot->size = 1;
+            root = newRoot;
+        }
+        else {
+            insertInternal(newLeaf->key[0], parent, newLeaf);
+        }
+        }
+    }
+
+        else
+        {
+            root = new Node;
+            root->key[0] = x;
+            root->leaf = true;
+            root->size = 1;
+        } 
+    }
+    Node *getRoot()
+        {
+        return root;
+        }
+
+
+  void output(Node *temp) 
+  {
+        if (temp) 
+        {
+            int i=0;
+            int s=temp->size;
+            while(i<s)
+            {
+                cout << temp->key[i] << "--";
+                ++i;
+                }
+            cout << " || \n";
+            if (! temp->leaf ) 
+            {
+            for(int j=0;j<=temp->size;++j) 
+                output(temp->ptr[j]);
+            }
+        }
+    }
+
+  
+};
+
+
+int main() {
+  BPTree node;
+  node.insert(5);
+  node.insert(15);
+  node.insert(25);
+  node.insert(35);
+  node.insert(45);
+  node.insert(55);
+  node.insert(40);
+  node.insert(30);
+  node.insert(20);
+  node.insert(25);
+
+  node.output(node.getRoot());
+  node.search(15);
+
+}
